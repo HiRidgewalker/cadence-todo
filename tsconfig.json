@@ -1,0 +1,35 @@
+{
+  // 继承 Expo 提供的默认 TypeScript 配置。
+  "extends": "expo/tsconfig.base",
+  // 当前项目额外覆盖或补充的编译选项。
+  "compilerOptions": {
+    // 开启严格类型检查，尽早暴露潜在类型问题。
+    "strict": true,
+    // 配置路径别名，让 TypeScript 和 VS Code 能解析 "@/..." 导入。
+    "paths": {
+      // 将 "@/..." 指向根目录 src 下的源码文件。
+      "@/*": [
+        "./src/*"
+      ],
+      // 将 "@/assets/..." 指向根目录 assets 下的静态资源。
+      "@/assets/*": [
+        "./assets/*"
+      ]
+    }
+  },
+  // 指定哪些文件参与根项目的类型检查。
+  "include": [
+    // 包含项目中的所有 TypeScript 文件。
+    "**/*.ts",
+    // 包含项目中的所有 TSX 组件文件。
+    "**/*.tsx",
+    // 包含 Expo Router 等工具生成的类型文件。
+    ".expo/types/**/*.ts",
+    // 包含 Expo 自动生成的环境类型声明。
+    "expo-env.d.ts"
+  ],
+  // 排除 reset-project 保存下来的示例目录，避免它使用根项目的 "@/..." 别名解析。
+  "exclude": [
+    "example"
+  ]
+}
