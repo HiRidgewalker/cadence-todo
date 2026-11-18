@@ -1,62 +1,63 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 
-import type { ThemeColors } from "@/constants/theme";
+import { radius, spacing, type, type ThemeColors } from "@/constants/theme";
+import { formatPeriodCard } from "@/lib/tasks/period";
 import type { TaskLevel } from "@/types/task";
+
+import { IconButton } from "./icon";
 
 type PeriodSwitcherProps = {
   level: TaskLevel;
-  label: string;
+  date: Date;
   colors: ThemeColors;
   onPrevious: () => void;
   onNext: () => void;
 };
 
-const previousLabel: Record<TaskLevel, string> = {
-  month: "上一月",
-  week: "上一周",
-  day: "上一天",
+const labels: Record<TaskLevel, [string, string]> = {
+  month: ["上一月", "下一月"],
+  week: ["上一周", "下一周"],
+  day: ["上一天", "下一天"],
 };
 
-const nextLabel: Record<TaskLevel, string> = {
-  month: "下一月",
-  week: "下一周",
-  day: "下一天",
-};
+export function PeriodSwitcher({ level, date, colors, onPrevious, onNext }: PeriodSwitcherProps) {
+  const { year, title, subtitle } = formatPeriodCard(level, date);
 
-export function PeriodSwitcher({ level, label, colors, onPrevious, onNext }: PeriodSwitcherProps) {
   return (
-    <View style={styles.row}>
-      <Pressable accessibilityRole="button" onPress={onPrevious} style={styles.side}>
-        <Text style={[styles.sideText, { color: colors.accent }]}>{previousLabel[level]}</Text>
-      </Pressable>
-      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
-      <Pressable accessibilityRole="button" onPress={onNext} style={styles.side}>
-        <Text style={[styles.sideText, { color: colors.accent }]}>{nextLabel[level]}</Text>
-      </Pressable>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Image
+        accessible={false}
+        source={require("@/assets/images/period-mesh.png")}
+        resizeMode="stretch"
+        style={styles.mesh}
+      />
+      <View style={styles.copy} accessibilityLiveRegion="polite">
+        <Text style={[type.mono, { color: colors.muted }]}>{year} 年</Text>
+        <Text style={[type.dateTitle, { color: colors.text }]}>{title}</Text>
+        <Text style={[type.body, { color: colors.muted }]}>{subtitle}</Text>
+      </View>
+      <View style={styles.controls}>
+        <IconButton rounded name="previous" label={labels[level][0]} colors={colors} onPress={onPrevious} />
+        <IconButton rounded name="next" label={labels[level][1]} colors={colors} onPress={onNext} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
+  card: {
     alignItems: "center",
+    borderRadius: radius.panel,
+    borderWidth: 1,
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.xs,
+    minHeight: 144,
+    overflow: "hidden",
+    paddingLeft: spacing.lg,
+    paddingRight: spacing.xs,
+    paddingVertical: spacing.md,
   },
-  side: {
-    minHeight: 44,
-    justifyContent: "center",
-    minWidth: 64,
-  },
-  sideText: {
-    fontSize: 15,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  label: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-  },
+  mesh: { ...StyleSheet.absoluteFill, height: "100%", width: "100%" },
+  copy: { flex: 1, gap: spacing.xs },
+  controls: { flexDirection: "row", gap: spacing.xs },
 });

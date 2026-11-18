@@ -159,3 +159,37 @@ export function formatDayKeyShort(dayKeyValue: string): string {
   const date = parseDayKey(dayKeyValue);
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
+
+const weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+
+function shortDate(date: Date) {
+  return `${date.getMonth() + 1} 月 ${date.getDate()} 日`;
+}
+
+export function formatPeriodCard(level: TaskLevel, date: Date) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+
+  if (level === "month") {
+    const end = new Date(year, month, 0).getDate();
+    return { year, title: `${month} 月`, subtitle: `${month} 月 1 日 – ${end} 日` };
+  }
+
+  const week = isoWeekParts(date);
+  if (level === "day") {
+    return {
+      year,
+      title: shortDate(date),
+      subtitle: `${weekdays[date.getDay()]} · 第 ${week.week} 周`,
+    };
+  }
+
+  const monday = mondayOfIsoWeek(week.year, week.week);
+  const sunday = addDays(monday, 6);
+  const end = sunday.getMonth() === monday.getMonth() ? `${sunday.getDate()} 日` : shortDate(sunday);
+  return {
+    year: week.year,
+    title: `第 ${week.week} 周`,
+    subtitle: `${shortDate(monday)} – ${end}`,
+  };
+}

@@ -1,22 +1,16 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, useColorScheme } from "react-native";
+import { StyleSheet, Text, useColorScheme, View } from "react-native";
 
+import { ActionButton } from "@/components/action-button";
 import { ParentPicker } from "@/components/parent-picker";
-import { SaveButton } from "@/components/save-button";
-import { colorsFor } from "@/constants/theme";
-import { formatPeriodKey } from "@/lib/tasks/period";
+import { TaskForm } from "@/components/task-form";
+import { colorsFor, spacing, type } from "@/constants/theme";
 import { taskErrorMessage, useCreateTask, useParentOptions } from "@/lib/tasks/queries";
 import type { TaskLevel } from "@/types/task";
 
-type TaskCreateScreenProps = {
-  level: TaskLevel;
-  periodKey: string;
-};
-
-export function TaskCreateScreen({ level, periodKey }: TaskCreateScreenProps) {
-  const colorScheme = useColorScheme();
-  const colors = colorsFor(colorScheme);
+export function TaskCreateScreen({ level, periodKey }: { level: TaskLevel; periodKey: string }) {
+  const colors = colorsFor(useColorScheme());
   const [title, setTitle] = useState("");
   const [parentId, setParentId] = useState<string | null>(null);
   const parentQuery = useParentOptions(level, periodKey);
@@ -24,82 +18,54 @@ export function TaskCreateScreen({ level, periodKey }: TaskCreateScreenProps) {
   const canSave = title.trim().length > 0 && !create.isPending;
 
   function onSave() {
+    if (!canSave) return;
     create.mutate(
       { level, periodKey, title, parentId },
-      { onSuccess: () => router.back() },
+      { onSuccess: () => router.canGoBack() ? router.back() : router.replace("/") },
     );
   }
 
   return (
-    <ScrollView
-      automaticallyAdjustKeyboardInsets
-      contentContainerStyle={styles.content}
-      style={{ backgroundColor: colors.background }}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={[styles.period, { color: colors.muted }]}>{formatPeriodKey(level, periodKey)}</Text>
-      <Text style={[styles.label, { color: colors.muted }]}>标题</Text>
-      <TextInput
-        value={title}
-        onChangeText={setTitle}
-        placeholder="任务标题"
-        placeholderTextColor={colors.muted}
-        style={[styles.input, { color: colors.text, backgroundColor: colors.card, borderColor: colors.border }]}
-        returnKeyType="done"
-        onSubmitEditing={() => {
-          if (canSave) onSave();
-        }}
-      />
-      {level === "month" ? null : parentQuery.isPending ? (
-        <Text style={[styles.status, { color: colors.muted }]}>加载中</Text>
-      ) : parentQuery.isError ? (
-        <Text style={[styles.status, { color: colors.muted }]}>{taskErrorMessage(parentQuery.error)}</Text>
-      ) : (
-        <ParentPicker
-          childLevel={level}
-          options={parentQuery.data ?? []}
-          value={parentId}
+    <TaskForm
+      colors={colors}
+      level={level}
+      periodKey={periodKey}
+      title={title}
+      onTitleChange={setTitle}
+      onSubmit={onSave}
+      error={create.isError ? taskErrorMessage(create.error) : null}
+      actions={
+        <ActionButton
+          label={create.isPending ? "保存中" : "保存"}
+          disabled={!canSave}
           colors={colors}
-          onChange={setParentId}
+          onPress={onSave}
+          style={styles.save}
         />
+      }
+    >
+      {level === "month" ? null : parentQuery.isPending ? (
+        <Text style={[type.body, styles.parent, { color: colors.muted }]}>加载上级任务中</Text>
+      ) : parentQuery.isError ? (
+        <Text style={[type.body, styles.parent, { color: colors.danger }]}>
+          {taskErrorMessage(parentQuery.error)}
+        </Text>
+      ) : (
+        <View style={styles.parent}>
+          <ParentPicker
+            childLevel={level}
+            options={parentQuery.data}
+            value={parentId}
+            colors={colors}
+            onChange={setParentId}
+          />
+        </View>
       )}
-      <SaveButton label={create.isPending ? "保存中" : "保存"} disabled={!canSave} colors={colors} onPress={onSave} />
-      {create.isError ? (
-        <Text style={[styles.error, { color: colors.muted }]}>{taskErrorMessage(create.error)}</Text>
-      ) : null}
-    </ScrollView>
+    </TaskForm>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
-  period: {
-    fontSize: 15,
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  input: {
-    borderRadius: 8,
-    borderWidth: 1,
-    fontSize: 16,
-    minHeight: 48,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  status: {
-    fontSize: 15,
-    marginTop: 16,
-  },
-  error: {
-    fontSize: 14,
-    marginTop: 12,
-  },
+  parent: { marginTop: spacing.sm },
+  save: { flex: 1 },
 });
